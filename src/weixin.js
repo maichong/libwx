@@ -173,6 +173,21 @@ Weixin.getAccessToken = async function (code) {
 };
 
 /**
+ * 获取授权用户信息
+ * @param openid
+ * @param accessToken 用户access token
+ */
+Weixin.getUserInfo = async function (openid, accessToken) {
+  let url = 'https://api.weixin.qq.com/sns/userinfo?access_token=' + accessToken + '&openid=' + openid;
+  let result = await request(url);
+  let data = JSON.parse(result.body);
+  if (data.errcode) {
+    throw new Error('Get weixin user info failed:' + data.errmsg);
+  }
+  return data;
+};
+
+/**
  * 获取微信关注者的身份信息
  * @param openid
  * @returns {Promise}
@@ -184,7 +199,7 @@ Weixin.getFansInfo = async function (openid) {
   let result = await request(url);
   let data = JSON.parse(result.body);
   if (data.errcode) {
-    throw new Error('Get weixin access_token failed:' + data.errmsg);
+    throw new Error('Get weixin fans info failed:' + data.errmsg);
   }
   return data;
 };
