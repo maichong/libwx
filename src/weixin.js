@@ -16,8 +16,7 @@ const md5 = require('MD5');
 const instances = {};
 
 function Weixin(config) {
-  let me = this;
-  me._config = _.extend({
+  this._config = _.extend({
     appid: '', //APP ID
     secret: '', //秘钥
     mch_id: '', //微信支付商户ID
@@ -40,9 +39,8 @@ Weixin.getInstance = function (name) {
 };
 
 Weixin.init = function (config) {
-  let me = this;
-  _.extend(me._config, config);
-  return me;
+  _.extend(this._config, config);
+  return this;
 };
 
 /**
@@ -50,19 +48,18 @@ Weixin.init = function (config) {
  * @returns {Promise}
  */
 Weixin.getGlobalToken = async function () {
-  let me = this;
-  if (me._globalToken && Date.now() < me._globalTokenTime) {
-    return me._globalToken;
+  if (this._globalToken && Date.now() < this._globalTokenTime) {
+    return this._globalToken;
   }
-  let url = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=' + me._config.appid + '&secret=' + me._config.secret;
+  let url = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=' + this._config.appid + '&secret=' + this._config.secret;
   let result = await request(url);
   let data = JSON.parse(result.body);
   if (data.errcode) {
     throw new Error('Get weixin token failed:' + data.errmsg);
   }
-  me._globalToken = data.access_token;
-  me._globalTokenTime = Date.now() + data.expires_in * 1000;
-  return me._globalToken;
+  this._globalToken = data.access_token;
+  this._globalTokenTime = Date.now() + data.expires_in * 1000;
+  return this._globalToken;
 };
 
 /**
@@ -70,20 +67,19 @@ Weixin.getGlobalToken = async function () {
  * @returns {Promise}
  */
 Weixin.getTicket = async function () {
-  let me = this;
-  if (me._jsapiTicket && Date.now() < me._jsapiTicketTime) {
-    return me._jsapiTicket;
+  if (this._jsapiTicket && Date.now() < this._jsapiTicketTime) {
+    return this._jsapiTicket;
   }
-  let token = await me.getGlobalToken();
+  let token = await this.getGlobalToken();
   let url = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=' + token + '&type=jsapi';
   let result = await request(url);
   let data = JSON.parse(result.body);
   if (data.errcode) {
     throw new Error('Get weixin ticket failed:' + data.errmsg);
   }
-  me._jsapiTicket = data.ticket;
-  me._jsapiTicketTime = Date.now() + data.expires_in * 1000;
-  return me._jsapiTicket;
+  this._jsapiTicket = data.ticket;
+  this._jsapiTicketTime = Date.now() + data.expires_in * 1000;
+  return this._jsapiTicket;
 };
 
 /**
@@ -91,7 +87,6 @@ Weixin.getTicket = async function () {
  * @returns {Promise}
  */
 Weixin.getJSConfig = async function (url) {
-  let me = this;
   let data = {
     jsapi_ticket: '',
     noncestr: stringRandom(),
@@ -99,7 +94,7 @@ Weixin.getJSConfig = async function (url) {
     url: url
   };
 
-  data.jsapi_ticket = await me.getTicket();
+  data.jsapi_ticket = await this.getTicket();
 
   let arr = [];
   _.each(data, function (value, key) {
@@ -107,7 +102,7 @@ Weixin.getJSConfig = async function (url) {
   });
 
   data.signature = sha1(arr.join('&'));
-  data.appId = me._config.appid;
+  data.appId = this._config.appid;
   data.nonceStr = data.noncestr;
   data.jsApiList = [
     'checkJsApi',
@@ -174,10 +169,7 @@ Weixin.getJSConfig = async function (url) {
  *  }
  */
 Weixin.getAccessToken = async function (code) {
-  let me = this;
-
-  let url = 'https://api.weixin.qq.com/sns/oauth2/access_token?appid=' + me._config.appid + '&secret=' + me._config.secret + '&code=' + code + '&grant_type=authorization_code';
-
+  let url = 'https://api.weixin.qq.com/sns/oauth2/access_token?appid=' + this._config.appid + '&secret=' + this._config.secret + '&code=' + code + '&grant_type=authorization_code';
   let result = await request(url);
   let data = JSON.parse(result.body);
   if (data.errcode) {
@@ -207,8 +199,7 @@ Weixin.getUserInfo = async function (openid, accessToken) {
  * @returns {Promise}
  */
 Weixin.getFansInfo = async function (openid) {
-  let me = this;
-  let token = await me.getGlobalToken();
+  let token = await this.getGlobalToken();
   let url = 'https://api.weixin.qq.com/cgi-bin/user/info?access_token=' + token + '&openid=' + openid + '&lang=zh_CN';
   let result = await request(url);
   let data = JSON.parse(result.body);
@@ -223,8 +214,7 @@ Weixin.getFansInfo = async function (openid) {
  * @returns {Promise}
  */
 Weixin.downloadMedia = async function (media_id) {
-  let me = this;
-  let token = await me.getGlobalToken();
+  let token = await this.getGlobalToken();
   let url = 'http://file.api.weixin.qq.com/cgi-bin/media/get?access_token=' + token + '&media_id=' + media_id;
   let result = await request({
     encoding: null,
@@ -251,15 +241,13 @@ Weixin.downloadMedia = async function (media_id) {
  * @returns {Promise}
  */
 Weixin.orderquery = async function (orderId) {
-  let me = this;
-
   let data = {
-    appid: me._config.appid,
-    mch_id: me._config.mch_id,
+    appid: this._config.appid,
+    mch_id: this._config.mch_id,
     nonce_str: stringRandom(),
     out_trade_no: orderId
   };
-  data.sign = getPaySign(data);
+  data.sign = getPaySign(data, this._config.pay_key);
 
   let xml = data2xml(data);
 
@@ -271,22 +259,19 @@ Weixin.orderquery = async function (orderId) {
     body: xml
   });
 
-  let json = await xml2data(result.body);
-
-  return json;
+  return await xml2data(result.body);
 };
 
 Weixin.unifiedorder = async function (data) {
-  let me = this;
   _.defaults(data, {
-    appid: me._config.appid,
-    mch_id: me.config.mch_id,
+    appid: this._config.appid,
+    mch_id: this._config.mch_id,
     nonce_str: stringRandom(),
-    notify_url: me._config.pay_notify_url,
-    trade_type: me._config.trade_type
+    notify_url: this._config.pay_notify_url,
+    trade_type: this._config.trade_type
   });
 
-  data.sign = getPaySign(data);
+  data.sign = getPaySign(data, this._config.pay_key);
 
   let xml = data2xml(data);
 
@@ -297,9 +282,10 @@ Weixin.unifiedorder = async function (data) {
   });
 
   let json = await xml2data(result.body);
-  if (!json.prepay_id) {
-    throw new Error('no prepay id');
+  if (json.return_msg && json.return_msg != 'OK') {
+    throw new Error(json.return_msg);
   }
+
   return json;
 };
 
@@ -309,32 +295,30 @@ Weixin.unifiedorder = async function (data) {
  * @returns {Promise}
  */
 Weixin.createPayReq = async function (data) {
-  let me = this;
-
   let params = _.assign({}, {
-    trade_type: me._config.pay_trade_type
+    trade_type: this._config.pay_trade_type
   }, data);
 
-  let result = await me.unifiedorder(params);
+  let result = await this.unifiedorder(params);
 
   //下单成功
   let timestamp = time();
   let noncestr = stringRandom();
 
   let reqData = {
-    'appid': me._config.appid,
+    'appid': this._config.appid,
     'noncestr': noncestr,
     'package': 'Sign=WXPay',
-    'partnerid': me._config.mch_id,
+    'partnerid': this._config.mch_id,
     'prepayid': result.prepay_id,
     'timestamp': timestamp
   };
 
-  let sign = getPaySign(reqData);
+  let sign = getPaySign(reqData, this._config.pay_key);
 
   let payReq = {
-    'appId': me._config.appid,
-    'partnerId': me._config.mch_id,
+    'appId': this._config.appid,
+    'partnerId': this._config.mch_id,
     'prepayId': result.prepay_id,
     'package': 'Sign=WXPay',
     'nonceStr': noncestr,
