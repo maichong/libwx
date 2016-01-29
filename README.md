@@ -13,6 +13,7 @@ npm i libwx
 
 ## API
 
+* getInstance(name) 获取实例
 * init(config) 初始化
 * getGlobalToken() 获取公众平台全局Token
 * getTicket() 获取公众平台JSSDK ticket
