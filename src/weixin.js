@@ -305,6 +305,23 @@ Weixin.createPayReq = async function (data) {
   let timestamp = time();
   let noncestr = stringRandom();
 
+  if (this._config.pay_trade_type == 'JSAPI') {
+    //JSSDK
+    let payReq = {
+      appId: this._config.appid,
+      timeStamp: timestamp,
+      nonceStr: noncestr,
+      'package': 'prepay_id=' + result.prepay_id,
+      signType: 'MD5'
+    };
+    payReq.paySign = getPaySign(payReq, this._config.pay_key);
+    payReq.timestamp = payReq.timeStamp;
+    delete payReq.appId;
+    delete payReq.timeStamp;
+    return payReq;
+  }
+
+  //APP 支付
   let reqData = {
     'appid': this._config.appid,
     'noncestr': noncestr,
