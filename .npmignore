@@ -1,1 +1,4 @@
 .history
+tsconfig.json
+yarn.lock
+src

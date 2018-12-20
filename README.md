@@ -4,20 +4,34 @@ NodeJs端微信SDK
 
 ## Installation
 
-libwx is available as an [npm package](https://www.npmjs.com/package/libwx).
-
-
 ```sh
 npm i libwx
 ```
 
+## Usage
+
+```js
+import { Weixin } from 'libwx';
+
+const wx = new Weixin({
+  type: 'h5',
+  appid: '',
+  secret: '',
+  mch_id: '',
+  pay_key: '',
+  // xxxx
+});
+
+let accessToken = await wx.getAccessToken(code);
+
+```
+
 ## API
 
-* getInstance(name) 获取实例
-* init(config) 初始化
+* setOptions(config) 设置
 * getGlobalToken() 获取公众平台全局Token
 * getTicket() 获取公众平台JSSDK ticket
-* getJSConfig(url) 获取JSSDK配置
+* getJsConfig(options) 获取JSSDK配置
 * getAccessToken(code) 微信登录后将用户的code转化为access_token
 * getUserInfo(openid, accessToken) 获取登录后用户的信息
 * getFansInfo(openid) 获取微信关注者的用户信息
@@ -28,7 +42,7 @@ npm i libwx
 
 
 ## Contribute
-[Maichong Software](http://maichong.it)
+[Maichong Software](http://maichong.io)
 
 [Liang Xingchen](https://github.com/liangxingchen)
 
