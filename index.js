@@ -1,17 +1,13 @@
-/**
- * @copyright Maichong Software Ltd. 2016 http://maichong.it
- * @date 2016-01-29
- * @author Liang <liang@maichong.it>
- */
-
-'use strict';
-
 const _ = require('lodash');
-const request = require('request-async');
 const stringRandom = require('string-random');
 const sha1 = require('sha1');
 const xml2js = require('xml2js');
-const md5 = require('MD5');
+const md5 = require('md5');
+const akita = require('akita').default;
+
+const client = akita.create({
+  apiRoot: ''
+});
 
 const instances = {};
 
@@ -52,8 +48,7 @@ Weixin.getGlobalToken = async function () {
     return this._globalToken;
   }
   let url = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=' + this._config.appid + '&secret=' + this._config.secret;
-  let result = await request(url);
-  let data = JSON.parse(result.body);
+  let data = await client.get(url);
   if (data.errcode) {
     throw new Error('Get weixin token failed:' + data.errmsg);
   }
@@ -72,8 +67,7 @@ Weixin.getTicket = async function () {
   }
   let token = await this.getGlobalToken();
   let url = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=' + token + '&type=jsapi';
-  let result = await request(url);
-  let data = JSON.parse(result.body);
+  let data = await client.get(url);
   if (data.errcode) {
     throw new Error('Get weixin ticket failed:' + data.errmsg);
   }
@@ -86,12 +80,15 @@ Weixin.getTicket = async function () {
  * 获取JSSDK初始化参数
  * @returns {Promise}
  */
-Weixin.getJSConfig = async function (url) {
+Weixin.getJSConfig = async function (options) {
+  if (typeof options === 'string') {
+    options = { url: options };
+  }
   let data = {
     jsapi_ticket: '',
     noncestr: stringRandom(),
     timestamp: time(),
-    url: url
+    url: options.url
   };
 
   data.jsapi_ticket = await this.getTicket();
@@ -104,7 +101,7 @@ Weixin.getJSConfig = async function (url) {
   data.signature = sha1(arr.join('&'));
   data.appId = this._config.appid;
   data.nonceStr = data.noncestr;
-  data.jsApiList = [
+  data.jsApiList = options.jsApiList || [
     'checkJsApi',
     'onMenuShareTimeline',
     'onMenuShareAppMessage',
@@ -145,8 +142,10 @@ Weixin.getJSConfig = async function (url) {
     'hideAllNonBaseMenuItem',
     'showAllNonBaseMenuItem'
   ];
-  //data.debug = true; // config.init.env == 'development';
   //console.log(data);
+  if (options.debug) {
+    data.debug = true;
+  }
   delete data.jsapi_ticket;
   delete data.noncestr;
   delete data.url;
@@ -170,8 +169,7 @@ Weixin.getJSConfig = async function (url) {
  */
 Weixin.getAccessToken = async function (code) {
   let url = 'https://api.weixin.qq.com/sns/oauth2/access_token?appid=' + this._config.appid + '&secret=' + this._config.secret + '&code=' + code + '&grant_type=authorization_code';
-  let result = await request(url);
-  let data = JSON.parse(result.body);
+  let data = await client.get(url);
   if (data.errcode) {
     throw new Error('Get weixin access_token failed:' + data.errmsg);
   }
@@ -185,8 +183,7 @@ Weixin.getAccessToken = async function (code) {
  */
 Weixin.getUserInfo = async function (openid, accessToken) {
   let url = 'https://api.weixin.qq.com/sns/userinfo?access_token=' + accessToken + '&openid=' + openid;
-  let result = await request(url);
-  let data = JSON.parse(result.body);
+  let data = await client.get(url);
   if (data.errcode) {
     throw new Error('Get weixin user info failed:' + data.errmsg);
   }
@@ -201,8 +198,7 @@ Weixin.getUserInfo = async function (openid, accessToken) {
 Weixin.getFansInfo = async function (openid) {
   let token = await this.getGlobalToken();
   let url = 'https://api.weixin.qq.com/cgi-bin/user/info?access_token=' + token + '&openid=' + openid + '&lang=zh_CN';
-  let result = await request(url);
-  let data = JSON.parse(result.body);
+  let data = await client.get(url);
   if (data.errcode) {
     throw new Error('Get weixin fans info failed:' + data.errmsg);
   }
@@ -216,23 +212,23 @@ Weixin.getFansInfo = async function (openid) {
 Weixin.downloadMedia = async function (media_id) {
   let token = await this.getGlobalToken();
   let url = 'http://file.api.weixin.qq.com/cgi-bin/media/get?access_token=' + token + '&media_id=' + media_id;
-  let result = await request({
-    encoding: null,
-    url: url
-  });
 
-  if (!result.body) {
-    throw new Error('No media data');
-  }
+  let res = await client.get(url).response();
+  let headers = await res.headers();
 
-  if (!result.headers['content-disposition']) {
+  if (!headers.has('Content-Disposition') && !headers.has('content-disposition')) {
     throw new Error('No media disposition');
   }
 
-  let data = result.body;
-  data.type = result.headers['content-type'];
+  let buffer = await res.buffer();
 
-  return data;
+  if (!buffer) {
+    throw new Error('No media data');
+  }
+
+  buffer.type = headers.get('Content-Type') || headers.get('content-type');
+
+  return buffer;
 };
 
 /**
@@ -253,13 +249,11 @@ Weixin.orderquery = async function (orderId) {
 
   //console.log(xml);
 
-  let result = await request({
-    method: 'POST',
-    url: 'https://api.mch.weixin.qq.com/pay/orderquery',
+  let result = await client.post('https://api.mch.weixin.qq.com/pay/orderquery', {
     body: xml
-  });
+  }).text();
 
-  return await xml2data(result.body);
+  return await xml2data(result);
 };
 
 Weixin.unifiedorder = async function (data) {
@@ -275,13 +269,11 @@ Weixin.unifiedorder = async function (data) {
 
   let xml = data2xml(data);
 
-  let result = await request({
-    method: 'POST',
-    url: 'https://api.mch.weixin.qq.com/pay/unifiedorder',
+  let result = await client.post('https://api.mch.weixin.qq.com/pay/unifiedorder', {
     body: xml
-  });
+  }).text();
 
-  let json = await xml2data(result.body);
+  let json = await xml2data(result);
   if (json.return_msg && json.return_msg != 'OK') {
     throw new Error(json.return_msg);
   }
@@ -346,7 +338,7 @@ Weixin.createPayReq = async function (data) {
   return payReq;
 };
 
-module.exports = Weixin.prototype = Weixin.default = Weixin;
+module.exports = Weixin.prototype = Weixin;
 Weixin.call(Weixin);
 
 /**

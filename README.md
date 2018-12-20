@@ -1,4 +1,4 @@
-#[libwx](https://github.com/maichong/libwx)
+# libwx
 
 NodeJs端微信SDK
 
