@@ -76,7 +76,7 @@ declare namespace libwx {
     subscribe_time: string;
     remark: string;
     groupid: number;
-    groupid: number[];
+    tagid_list: number[];
     subscribe_scene: SubscribeScene;
     qr_scene: number;
     qr_scene_str: string;
@@ -96,7 +96,7 @@ declare namespace libwx {
      * 获取实例
      * @param name
      */
-    getInstance(name: stirng): Weixin;
+    getInstance(name: string): Weixin;
     /**
      * 设置
      * @param config 
