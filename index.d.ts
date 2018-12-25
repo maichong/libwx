@@ -1,8 +1,8 @@
 export interface Options {
   /**
-   * 平台
+   * 平台渠道
    */
-  platform: 'h5' | 'app' | 'wxapp';
+  channel?: 'jssdk' | 'app' | 'wxapp';
   /**
    * APP ID
    */
@@ -11,22 +11,6 @@ export interface Options {
    * 秘钥
    */
   secret: string;
-  /**
-   * 微信支付商户ID
-   */
-  mch_id?: string;
-  /**
-   * 支付秘钥
-   */
-  pay_key?: string;
-  /**
-   * 支付通知地址
-   */
-  pay_notify_url?: string;
-  /**
-   * 支付方式
-   */
-  pay_trade_type?: string;
 }
 
 export interface JsConfig {
@@ -155,19 +139,4 @@ export class Weixin {
    * @param media_id
    */
   downloadMedia(media_id: string): Promise<MediaData>;
-  /**
-   * 查询订单
-   * @param orderId
-   */
-  orderquery(orderId: string): Promise<any>;
-  /**
-   * 统一下单
-   * @param data
-   */
-  unifiedorder(data: any): Promise<any>;
-  /**
-   * 创建支付参数
-   * @param data
-   */
-  createPayReq(data: any): Promise<any>;
 }
