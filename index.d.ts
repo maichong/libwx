@@ -101,7 +101,36 @@ interface MediaData extends Buffer {
   type: string;
 }
 
+interface QrCodeOptions {
+  action_name: 'QR_STR_SCENE' | 'QR_LIMIT_STR_SCENE';
+  expire_seconds?: number;
+  action_info: {
+    scene: {
+      scene_id?: number;
+      scene_str?: string;
+    };
+  };
+}
+
+/**
+ * 生成小程序二维码参数
+ */
+interface WXACodeOptions {
+  scene: string;
+  page?: string;
+  width?: number;
+  auto_color?: boolean;
+  line_color?: {
+    r: number;
+    g: number;
+    b: number;
+  };
+  is_hyaline?: boolean;
+}
+
 export class Weixin {
+  options: Options;
+
   constructor(options?: Options);
 
   setOptions(options: Options): void;
@@ -139,4 +168,16 @@ export class Weixin {
    * @param media_id
    */
   downloadMedia(media_id: string): Promise<MediaData>;
+
+  /**
+   * 生成公众号二维码
+   * @param {QrCodeOptions} options 二维码选项
+   */
+  getQrCode(options: QrCodeOptions): Promise<{ ticket: string; expire_seconds: number; url: string }>;
+
+  /**
+   * 生成小程序二维码
+   * @param {WXACodeOptions} options 二维码选项
+   */
+  getWXACodeUnlimit(options: WXACodeOptions): Promise<Buffer>;
 }

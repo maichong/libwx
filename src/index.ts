@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import * as stringRandom from 'string-random';
 import akita from 'akita';
-import { Options, JsConfigOptions, JsConfig, AccessToken, UserInfo, FansInfo, MediaData } from '..';
+import { Options, JsConfigOptions, JsConfig, AccessToken, UserInfo, FansInfo, MediaData, QrCodeOptions, WXACodeOptions } from '..';
 import sha1 = require('sha1');
 
 const client = akita.create({});
@@ -200,6 +200,52 @@ export class Weixin {
     buffer.type = headers.get('Content-Type') || headers.get('content-type');
 
     return buffer;
+  }
+
+  /**
+   * 生成公众号二维码
+   * @param {QrCodeOptions} options 二维码选项
+   */
+  async getQrCode(options: QrCodeOptions): Promise<{ ticket: string; expire_seconds: number; url: string }> {
+    let token = await this.getGlobalToken();
+    let url = `https://api.weixin.qq.com/cgi-bin/qrcode/create?access_token=${token}`;
+    let result = await client.post(url, { body: options });
+
+    if (result.errmsg) {
+      let e = new Error(result.errmsg);
+      // @ts-ignore
+      e.errcode = result.errcode;
+      throw e;
+    }
+
+    return result;
+  }
+
+  /**
+   * 生成小程序二维码
+   * @param {WXACodeOptions} options 二维码选项
+   */
+  async getWXACodeUnlimit(options: WXACodeOptions): Promise<Buffer> {
+    let token = await this.getGlobalToken();
+    let url = `https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=${token}`;
+
+    let result = await client.post(url, { body: options }).buffer();
+
+    if (result[0] === 0x7b) {
+      // 以 { 开头
+      let error;
+      try {
+        error = JSON.parse(result.toString());
+      } catch (e) {
+      }
+      if (error && error.errmsg) {
+        let e = new Error(error.errmsg);
+        // @ts-ignore
+        e.errcode = error.errcode;
+        throw e;
+      }
+    }
+    return result;
   }
 }
 

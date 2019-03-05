@@ -1,6 +1,6 @@
 {
   "name": "libwx",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Weixin sdk for node",
   "main": "lib/index.js",
   "types": "index.d.ts",
@@ -21,25 +21,25 @@
   "author": "Liang <liang@maichong.it> (https://github.com/liangxingchen)",
   "license": "MIT",
   "dependencies": {
-    "akita": "^0.7.2",
+    "akita": "^0.7.3",
     "lodash": "^4.17.11",
     "sha1": "^1.1.1",
     "string-random": "^0.1.3"
   },
   "devDependencies": {
-    "@babel/core": "^7.2.2",
-    "@babel/preset-env": "^7.2.3",
-    "@babel/preset-typescript": "^7.1.0",
-    "@types/lodash": "^4.14.119",
-    "@types/node": "^10.12.18",
+    "@babel/core": "^7.3.4",
+    "@babel/preset-env": "^7.3.4",
+    "@babel/preset-typescript": "^7.3.3",
+    "@types/lodash": "^4.14.122",
+    "@types/node": "^11.10.4",
     "@types/sha1": "^1.1.1",
     "babel-eslint": "^10.0.1",
     "eslint": "4.19.1",
     "eslint-config-alloy": "^1.4.2",
-    "eslint-plugin-react": "^7.11.1",
+    "eslint-plugin-react": "^7.12.4",
     "eslint-plugin-typescript": "^0.14.0",
-    "husky": "^1.2.1",
-    "typescript": "3.1.1",
-    "typescript-eslint-parser": "^21.0.2"
+    "husky": "^1.3.1",
+    "typescript": "3.2.1",
+    "typescript-eslint-parser": "^22.0.0"
   }
 }
