@@ -11,6 +11,16 @@ export interface Options {
    * 秘钥
    */
   secret: string;
+  /**
+   * 全局Token缓存器
+   * 当多副本运行时，需在多副本之间共享全局 access_token 否则会报错 invalid credential, access_token is invalid or not latest hints
+   */
+  setGlobalTokenCache?: (token: string, lifetime: number) => Promise<void>;
+  /**
+   * 全局Token缓存器
+   * 当多副本运行时，需在多副本之间共享全局 access_token 否则会报错 invalid credential, access_token is invalid or not latest hints
+   */
+  getGlobalTokenCache?: () => Promise<string | null>;
 }
 
 export interface JsConfig {
@@ -88,14 +98,15 @@ interface FansInfo {
   qr_scene_str: string;
 }
 
-type SubscribeScene = 'ADD_SCENE_SEARCH'
-| 'ADD_SCENE_ACCOUNT_MIGRATION'
-| 'ADD_SCENE_PROFILE_CARD'
-| 'ADD_SCENE_QR_CODE'
-| 'ADD_SCENEPROFILE'
-| 'ADD_SCENE_PROFILE_ITEM'
-| 'ADD_SCENE_PAID'
-| 'ADD_SCENE_OTHERS';
+type SubscribeScene =
+  | 'ADD_SCENE_SEARCH'
+  | 'ADD_SCENE_ACCOUNT_MIGRATION'
+  | 'ADD_SCENE_PROFILE_CARD'
+  | 'ADD_SCENE_QR_CODE'
+  | 'ADD_SCENEPROFILE'
+  | 'ADD_SCENE_PROFILE_ITEM'
+  | 'ADD_SCENE_PAID'
+  | 'ADD_SCENE_OTHERS';
 
 interface MediaData extends Buffer {
   type: string;
@@ -137,7 +148,7 @@ export class Weixin {
   /**
    * 获取全局访问token
    */
-  getGlobalToken(): Promise<string>;
+  getGlobalToken(refresh?: boolean): Promise<string>;
   /**
    * 获取全局访问Ticket
    */
