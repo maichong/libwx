@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import * as stringRandom from 'string-random';
 import * as hasha from 'hasha';
-import akita from 'akita';
+import akita, { Client } from 'akita';
 import {
   Options,
   JsConfigOptions,
@@ -14,10 +14,9 @@ import {
   WXACodeOptions
 } from '..';
 
-const client = akita.resolve('libwx');
-
 export class Weixin {
   options: Options;
+  _client: Client;
   _globalToken: string;
   _globalTokenTime: number;
   _jsapiTicket: string;
@@ -29,6 +28,7 @@ export class Weixin {
     if (!this.options.channel) {
       this.options.channel = 'jssdk';
     }
+    this._client = akita.create({});
   }
 
   setOptions(options: Options) {
@@ -75,9 +75,12 @@ export class Weixin {
 
   async _fetchGlobalToken() {
     let url = `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${this.options.appid}&secret=${this.options.secret}`;
-    let data = await client.get(url);
+    let data = await this._client.get(url);
     if (data.errcode) {
-      throw new Error(`Get weixin global token failed:${data.errmsg}`);
+      let e = new Error(`Get weixin global token failed:${data.errmsg}`);
+      // @ts-ignore
+      e.errcode = data.errcode;
+      throw e;
     }
     return data;
   }
@@ -91,13 +94,16 @@ export class Weixin {
     }
     let token = await this.getGlobalToken(noReTry);
     let url = `https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=${token}&type=jsapi`;
-    let data = await client.get(url);
+    let data = await this._client.get(url);
     if (data.errcode) {
       if (!noReTry && /access_token is invalid or not latest hints/.test(data.errmsg)) {
         // Global Token 过期，刷新重试
         return await this.getTicket(true);
       }
-      throw new Error(`Get weixin ticket failed:${data.errmsg}`);
+      let e = new Error(`Get weixin ticket failed:${data.errmsg}`);
+      // @ts-ignore
+      e.errcode = data.errcode;
+      throw e;
     }
     this._jsapiTicket = data.ticket;
     this._jsapiTicketTime = Date.now() + data.expires_in * 1000;
@@ -185,9 +191,12 @@ export class Weixin {
       // 小程序平台
       url = `https://api.weixin.qq.com/sns/jscode2session?appid=${this.options.appid}&secret=${this.options.secret}&js_code=${code}&grant_type=authorization_code`;
     }
-    let data = await client.get(url);
+    let data = await this._client.get(url);
     if (data.errcode) {
-      throw new Error(`Get weixin access_token failed:${data.errmsg}`);
+      let e = new Error(`Get weixin access_token failed:${data.errmsg}`);
+      // @ts-ignore
+      e.errcode = data.errcode;
+      throw e;
     }
     return data;
   }
@@ -199,9 +208,12 @@ export class Weixin {
    */
   async getUserInfo(openid: string, access_token: string): Promise<UserInfo> {
     let url = `https://api.weixin.qq.com/sns/userinfo?access_token=${access_token}&openid=${openid}`;
-    let data = await client.get(url);
+    let data = await this._client.get(url);
     if (data.errcode) {
-      throw new Error(`Get weixin user info failed:${data.errmsg}`);
+      let e = new Error(`Get weixin user info failed:${data.errmsg}`);
+      // @ts-ignore
+      e.errcode = data.errcode;
+      throw e;
     }
     return data;
   }
@@ -214,13 +226,16 @@ export class Weixin {
   async getFansInfo(openid: string, noReTry?: boolean): Promise<FansInfo> {
     let token = await this.getGlobalToken(noReTry);
     let url = `https://api.weixin.qq.com/cgi-bin/user/info?access_token=${token}&openid=${openid}&lang=zh_CN`;
-    let data = await client.get(url);
+    let data = await this._client.get(url);
     if (data.errcode) {
       if (!noReTry && /access_token is invalid or not latest hints/.test(data.errmsg)) {
         // Global Token 过期，刷新重试
         return await this.getFansInfo(openid, true);
       }
-      throw new Error(`Get weixin fans info failed:${data.errmsg}`);
+      let e = new Error(`Get weixin fans info failed:${data.errmsg}`);
+      // @ts-ignore
+      e.errcode = data.errcode;
+      throw e;
     }
     return data;
   }
@@ -233,7 +248,7 @@ export class Weixin {
     let token = await this.getGlobalToken(noReTry);
     let url = `http://file.api.weixin.qq.com/cgi-bin/media/get?access_token=${token}&media_id=${media_id}`;
 
-    let result = client.get(url);
+    let result = this._client.get(url);
     let headers = await result.headers();
     let buffer = (await result.buffer()) as MediaData;
 
@@ -279,7 +294,7 @@ export class Weixin {
   ): Promise<{ ticket: string; expire_seconds: number; url: string }> {
     let token = await this.getGlobalToken(noReTry);
     let url = `https://api.weixin.qq.com/cgi-bin/qrcode/create?access_token=${token}`;
-    let data = await client.post(url, { body: options });
+    let data = await this._client.post(url, { body: options });
 
     if (data.errmsg) {
       if (!noReTry && /access_token is invalid or not latest hints/.test(data.errmsg)) {
@@ -303,7 +318,7 @@ export class Weixin {
     let token = await this.getGlobalToken();
     let url = `https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=${token}`;
 
-    let result = await client.post(url, { body: options }).buffer();
+    let result = await this._client.post(url, { body: options }).buffer();
 
     if (result[0] === 0x7b) {
       // 以 { 开头

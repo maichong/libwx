@@ -1,6 +1,6 @@
 {
   "name": "libwx",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Weixin sdk for node",
   "main": "lib/index.js",
   "types": "index.d.ts",
@@ -27,25 +27,26 @@
   "author": "Liang <liang@maichong.it> (https://github.com/liangxingchen)",
   "license": "MIT",
   "dependencies": {
-    "akita": "^0.8.2",
+    "akita": "^0.10.2",
     "hasha": "^5.2.0",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.20",
     "string-random": "^0.1.3"
   },
   "devDependencies": {
-    "@babel/core": "^7.9.0",
-    "@babel/preset-env": "^7.9.5",
-    "@babel/preset-typescript": "^7.9.0",
-    "@types/lodash": "^4.14.150",
+    "@babel/core": "^7.11.5",
+    "@babel/preset-env": "^7.11.5",
+    "@babel/preset-typescript": "^7.10.4",
+    "@types/lodash": "^4.14.161",
     "@types/node": "12.12.25",
+    "@types/qs": "^6.9.4",
     "@types/sha1": "^1.1.2",
-    "@typescript-eslint/eslint-plugin": "^2.28.0",
-    "@typescript-eslint/parser": "^2.28.0",
+    "@typescript-eslint/eslint-plugin": "^4.0.1",
+    "@typescript-eslint/parser": "^4.0.1",
     "babel-eslint": "^10.1.0",
-    "eslint": "^6.8.0",
-    "eslint-config-alloy": "^3.7.1",
+    "eslint": "^7.8.1",
+    "eslint-config-alloy": "^3.8.0",
     "husky": "^4.2.5",
-    "prettier": "^2.0.4",
-    "typescript": "^3.8.3"
+    "prettier": "^2.1.1",
+    "typescript": "^4.0.2"
   }
 }
