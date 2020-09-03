@@ -191,4 +191,12 @@ export class Weixin {
    * @param {WXACodeOptions} options 二维码选项
    */
   getWXACodeUnlimit(options: WXACodeOptions): Promise<Buffer>;
+
+  /**
+   * 监测图片是否包含违规内容
+   * 如果有违规内容，返回false
+   * 图片应小于1M，像素小于 750px x 1334px
+   * @param {Buffer} image 图片Buffer数据
+   */
+  imgSecCheck(image: Buffer): Promise<boolean>;
 }
