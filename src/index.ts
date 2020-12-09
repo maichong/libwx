@@ -4,17 +4,25 @@ import * as hasha from 'hasha';
 import akita, { Client } from 'akita';
 import {
   Options,
+  Request,
+  Result,
   JsConfigOptions,
   JsConfig,
   AccessToken,
+  AuthInfo,
   UserInfo,
-  FansInfo,
+  GetUserListResult,
+  MaterialType,
+  GetMaterialListResult,
+  Menu,
+  Message,
+  TemplateMessage,
   MediaData,
   QrCodeOptions,
   WXACodeOptions
 } from '..';
 
-export class Weixin {
+export default class Weixin {
   options: Options;
   _client: Client;
   _globalToken: string;
@@ -31,12 +39,17 @@ export class Weixin {
     this._client = akita.create({});
   }
 
+  /**
+   * 设置libwx选项
+   * @param {Options} options
+   */
   setOptions(options: Options) {
     _.assign(this.options, options);
   }
 
   /**
    * 获取全局访问token
+   * @param {boolean} [refresh] 是否强制刷新
    */
   getGlobalToken(refresh?: boolean): Promise<string> {
     if (this._getGlobalTokenPromise) {
@@ -86,38 +99,65 @@ export class Weixin {
   }
 
   /**
+   * 通用请求方法，自动会为url加上 access_token 参数
+   * @param {string} req
+   */
+  async request(req: Request): Promise<any> {
+    if (req.query?.access_token) {
+      return this._client.request(req.url, req);
+    }
+
+    let access_token = await this.getGlobalToken();
+    req.query = Object.assign({ access_token }, req.query);
+
+    let res = await this._client.request(req.url, req);
+
+    if (res.errcode) {
+      if (/access_token is invalid or not latest hints/.test(res.errmsg)) {
+        // Global Token 过期，刷新重试
+        access_token = await this.getGlobalToken(true);
+        req.query = Object.assign(req.query, { access_token });
+        res = await this._client.request(req.url, req);
+        if (res.errcode) {
+          let e = new Error(res.errmsg);
+          // @ts-ignore
+          e.errcode = res.errcode;
+          throw e;
+        }
+      } else {
+        let e = new Error(res.errmsg);
+        // @ts-ignore
+        e.errcode = res.errcode;
+        throw e;
+      }
+    }
+
+    return res;
+  }
+
+  /**
    * 获取全局访问Ticket
    */
-  async getTicket(noReTry?: boolean): Promise<string> {
+  async getTicket(): Promise<string> {
     if (this._jsapiTicket && Date.now() < this._jsapiTicketTime) {
       return this._jsapiTicket;
     }
-    let token = await this.getGlobalToken(noReTry);
-    let url = `https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=${token}&type=jsapi`;
-    let data = await this._client.get(url);
-    if (data.errcode) {
-      if (!noReTry && /access_token is invalid or not latest hints/.test(data.errmsg)) {
-        // Global Token 过期，刷新重试
-        return await this.getTicket(true);
+    let res = await this.request({
+      url: 'https://api.weixin.qq.com/cgi-bin/ticket/getticket',
+      query: {
+        type: 'jsapi'
       }
-      let e = new Error(`Get weixin ticket failed:${data.errmsg}`);
-      // @ts-ignore
-      e.errcode = data.errcode;
-      throw e;
-    }
-    this._jsapiTicket = data.ticket;
-    this._jsapiTicketTime = Date.now() + data.expires_in * 1000;
+    });
+    this._jsapiTicket = res.ticket;
+    this._jsapiTicketTime = Date.now() + res.expires_in * 1000;
     return this._jsapiTicket;
   }
 
   /**
    * 获取公众号h5平台 JSSDK Config
-   * @param options url
+   * @param {JsConfigOptions} options
    */
-  async getJsConfig(options: string | JsConfigOptions): Promise<JsConfig> {
-    if (typeof options === 'string') {
-      options = { url: options };
-    }
+  async getJsConfig(options: JsConfigOptions): Promise<JsConfig> {
     let data: any = {
       jsapi_ticket: '',
       noncestr: stringRandom(),
@@ -183,7 +223,8 @@ export class Weixin {
 
   /**
    * 获取用户 AccessToken
-   * @param code
+   * 小程序和公众号都可用
+   * @param {string} code
    */
   async getAccessToken(code: string): Promise<AccessToken> {
     let url = `https://api.weixin.qq.com/sns/oauth2/access_token?appid=${this.options.appid}&secret=${this.options.secret}&code=${code}&grant_type=authorization_code`;
@@ -202,51 +243,120 @@ export class Weixin {
   }
 
   /**
-   * 获取用户信息，小程序平台不可用
-   * @param openid
-   * @param access_token
+   * 获取网页授权用户信息
+   * 小程序不可用
+   * @param {string} openid
+   * @param {string} access_token 用户 access_token，并非全局 access_token
    */
-  async getUserInfo(openid: string, access_token: string): Promise<UserInfo> {
-    let url = `https://api.weixin.qq.com/sns/userinfo?access_token=${access_token}&openid=${openid}`;
-    let data = await this._client.get(url);
-    if (data.errcode) {
-      let e = new Error(`Get weixin user info failed:${data.errmsg}`);
-      // @ts-ignore
-      e.errcode = data.errcode;
-      throw e;
-    }
-    return data;
+  getAuthInfo(openid: string, access_token: string): Promise<AuthInfo> {
+    return this.request({
+      url: 'https://api.weixin.qq.com/sns/userinfo',
+      query: { openid, access_token }
+    });
   }
 
   /**
    * 获取公众号关注者信息
-   * @param openid
-   * @param access_token
+   * 小程序不可用
+   * @param {string} openid
    */
-  async getFansInfo(openid: string, noReTry?: boolean): Promise<FansInfo> {
-    let token = await this.getGlobalToken(noReTry);
-    let url = `https://api.weixin.qq.com/cgi-bin/user/info?access_token=${token}&openid=${openid}&lang=zh_CN`;
-    let data = await this._client.get(url);
-    if (data.errcode) {
-      if (!noReTry && /access_token is invalid or not latest hints/.test(data.errmsg)) {
-        // Global Token 过期，刷新重试
-        return await this.getFansInfo(openid, true);
+  getUserInfo(openid: string): Promise<UserInfo> {
+    return this.request({
+      url: 'https://api.weixin.qq.com/cgi-bin/user/info',
+      query: {
+        openid,
+        lang: 'zh_CN'
       }
-      let e = new Error(`Get weixin fans info failed:${data.errmsg}`);
-      // @ts-ignore
-      e.errcode = data.errcode;
-      throw e;
-    }
-    return data;
+    });
   }
 
   /**
-   * 下载媒体文件
-   * @param media_id
+   * 获取公众号关注者列表
+   * 只公众号可用
+   * @param {string} [next_openid] 下一页开头，如果不传从第一页开始
+   */
+  getUserList(next_openid?: string): Promise<GetUserListResult> {
+    return this.request({
+      url: 'https://api.weixin.qq.com/cgi-bin/user/get',
+      query: {
+        next_openid
+      }
+    });
+  }
+
+  /**
+   * 获取永久素材列表，每页20条
+   * 只公众号可用
+   * @param {string} type 素材类型
+   * @param {number} [offset] 从全部素材的该偏移位置开始返回，0表示从第一个素材
+   */
+  getMaterialList(type: MaterialType, offset?: number): Promise<GetMaterialListResult> {
+    return this.request({
+      method: 'POST',
+      url: 'https://api.weixin.qq.com/cgi-bin/material/batchget_material',
+      body: {
+        type,
+        offset: offset || 0,
+        count: 20
+      }
+    });
+  }
+
+  /**
+   * 创建自定义菜单
+   * 只公众号可用
+   */
+  createMenu(menu: Menu): Promise<Result> {
+    return this.request({
+      method: 'POST',
+      url: 'https://api.weixin.qq.com/cgi-bin/menu/get',
+      body: menu
+    });
+  }
+
+  /**
+   * 获取自定义菜单
+   * 只公众号可用
+   */
+  getMenu(): Promise<Menu> {
+    return this.request({
+      url: 'https://api.weixin.qq.com/cgi-bin/menu/get'
+    });
+  }
+
+  /**
+   * 向用户发送消息
+   * 只公众号可用
+   * @param {Message} message
+   */
+  sendMessage(message: Message): Promise<Result<{ msgid: number }>> {
+    return this.request({
+      method: 'POST',
+      url: 'https://api.weixin.qq.com/cgi-bin/message/custom/send',
+      body: message
+    });
+  }
+
+  /**
+   * 向用户发送模板消息
+   * 只公众号可用
+   * @param {TemplateMessage} message
+   */
+  sendTemplateMessage(message: TemplateMessage): Promise<Result<{ msgid: number }>> {
+    return this.request({
+      method: 'POST',
+      url: 'https://api.weixin.qq.com/cgi-bin/message/template/send',
+      body: message
+    });
+  }
+
+  /**
+   * 下载媒体文件数据
+   * @param {string} media_id
    */
   async downloadMedia(media_id: string, noReTry?: boolean): Promise<MediaData> {
     let token = await this.getGlobalToken(noReTry);
-    let url = `http://file.api.weixin.qq.com/cgi-bin/media/get?access_token=${token}&media_id=${media_id}`;
+    let url = `https://api.weixin.qq.com/cgi-bin/media/get?access_token=${token}&media_id=${media_id}`;
 
     let result = this._client.get(url);
     let headers = await result.headers();
@@ -286,28 +396,15 @@ export class Weixin {
 
   /**
    * 生成公众号二维码
+   * 只公众号可用
    * @param {QrCodeOptions} options 二维码选项
    */
-  async getQrCode(
-    options: QrCodeOptions,
-    noReTry?: boolean
-  ): Promise<{ ticket: string; expire_seconds: number; url: string }> {
-    let token = await this.getGlobalToken(noReTry);
-    let url = `https://api.weixin.qq.com/cgi-bin/qrcode/create?access_token=${token}`;
-    let data = await this._client.post(url, { body: options });
-
-    if (data.errmsg) {
-      if (!noReTry && /access_token is invalid or not latest hints/.test(data.errmsg)) {
-        // Global Token 过期，刷新重试
-        return await this.getQrCode(options, true);
-      }
-      let e = new Error(data.errmsg);
-      // @ts-ignore
-      e.errcode = data.errcode;
-      throw e;
-    }
-
-    return data;
+  getQrCode(options: QrCodeOptions): Promise<{ ticket: string; expire_seconds: number; url: string }> {
+    return this.request({
+      method: 'POST',
+      url: 'https://api.weixin.qq.com/cgi-bin/qrcode/create',
+      body: options
+    });
   }
 
   /**
@@ -348,16 +445,19 @@ export class Weixin {
    * @param {Buffer} image 图片Buffer数据
    */
   async imgSecCheck(image: Buffer): Promise<boolean> {
-    let token = await this.getGlobalToken();
-    let url = `https://api.weixin.qq.com/wxa/img_sec_check?access_token=${token}`;
-
     const FormData = this._client._options.FormData;
     let body = new FormData();
     body.append('media', image as any, 'image.jpg');
 
-    let data = await this._client.post(url, { body });
-
-    if (parseInt(data.errcode) === 87014) return false;
+    try {
+      await this.request({
+        method: 'POST',
+        url: 'https://api.weixin.qq.com/wxa/img_sec_check',
+        body
+      });
+    } catch (e) {
+      return false;
+    }
     return true;
   }
 }

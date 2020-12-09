@@ -33,8 +33,8 @@ let accessToken = await wx.getAccessToken(code);
 * getTicket() 获取公众平台JSSDK ticket
 * getJsConfig(options) 获取JSSDK配置
 * getAccessToken(code) 微信登录后将用户的code转化为access_token
-* getUserInfo(openid, accessToken) 获取登录后用户的信息
-* getFansInfo(openid) 获取微信关注者的用户信息
+* getAuthInfo(openid, accessToken) 获取网页授权用户信息，小程序平台不可用
+* getUserInfo(openid) 获取微信关注者的用户信息
 * downloadMedia(media_id) 从微信服务器上下载媒体文件
 * orderquery(orderId) 查询订单信息
 * unifiedorder(data) 统一下单
