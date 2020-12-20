@@ -309,7 +309,7 @@ export default class Weixin {
   createMenu(menu: Menu): Promise<Result> {
     return this.request({
       method: 'POST',
-      url: 'https://api.weixin.qq.com/cgi-bin/menu/get',
+      url: 'https://api.weixin.qq.com/cgi-bin/menu/create',
       body: menu
     });
   }
