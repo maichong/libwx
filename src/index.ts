@@ -113,7 +113,7 @@ export default class Weixin {
     let res = await this._client.request(req.url, req);
 
     if (res.errcode) {
-      if (/access_token is invalid or not latest hints/.test(res.errmsg)) {
+      if (/access_token is invalid or not latest/.test(res.errmsg)) {
         // Global Token 过期，刷新重试
         access_token = await this.getGlobalToken(true);
         req.query = Object.assign(req.query, { access_token });
@@ -370,7 +370,7 @@ export default class Weixin {
       } catch (e) {}
       // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
       if (data && data.errmsg) {
-        if (!noReTry && /access_token is invalid or not latest hints/.test(data.errmsg)) {
+        if (!noReTry && /access_token is invalid or not latest/.test(data.errmsg)) {
           // Global Token 过期，刷新重试
           return await this.downloadMedia(media_id, true);
         }
@@ -425,7 +425,7 @@ export default class Weixin {
       } catch (e) {}
       // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
       if (data && data.errmsg) {
-        if (!noReTry && /access_token is invalid or not latest hints/.test(data.errmsg)) {
+        if (!noReTry && /access_token is invalid or not latest/.test(data.errmsg)) {
           // Global Token 过期，刷新重试
           return await this.getWXACodeUnlimit(options, true);
         }
