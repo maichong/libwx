@@ -15,12 +15,12 @@ export interface Options {
   secret: string;
   /**
    * 全局Token缓存器
-   * 当多副本运行时，需在多副本之间共享全局 access_token 否则会报错 invalid credential, access_token is invalid or not latest hints
+   * 当多副本运行时，需在多副本之间共享全局 access_token 否则会报错 invalid credential, access_token is invalid or not latest
    */
-  setGlobalTokenCache?: (token: string, lifetime: number) => Promise<void>;
+  setGlobalTokenCache?: (token: string, expiredAt: number) => Promise<void>;
   /**
    * 全局Token缓存器
-   * 当多副本运行时，需在多副本之间共享全局 access_token 否则会报错 invalid credential, access_token is invalid or not latest hints
+   * 当多副本运行时，需在多副本之间共享全局 access_token 否则会报错 invalid credential, access_token is invalid or not latest
    */
   getGlobalTokenCache?: () => Promise<string | null>;
 }
@@ -118,7 +118,7 @@ export interface UserInfo {
   country: string;
   headimgurl: string;
   language: string;
-  subscribe_time: string;
+  subscribe_time: number;
   remark: string;
   groupid: number;
   tagid_list: number[];
@@ -178,12 +178,15 @@ export interface Material {
     news_item: Array<{
       title: string;
       thumb_media_id: string;
-      show_cover_pic: string;
+      show_cover_pic: number;
       author: string;
       digest: string;
       content: string;
       url: string;
+      thumb_url: string;
       content_source_url: string;
+      need_open_comment?: number;
+      only_fans_can_comment?: number;
     }>;
   };
 }

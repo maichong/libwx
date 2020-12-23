@@ -9,7 +9,7 @@ Dockerfile
 .nyc_output/**
 coverage/**
 node_modules/**
-dist/**
+lib/**
 runtime/**
 public/admin/**
 public/store/**
