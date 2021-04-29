@@ -326,7 +326,7 @@ export interface TemplateMessage {
   data: {
     [key: string]: {
       value: string;
-      color: string;
+      color?: string;
     };
   };
 }

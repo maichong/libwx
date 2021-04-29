@@ -2,3 +2,8 @@
 tsconfig.json
 yarn.lock
 src
+.editorconfig
+.eslintignore
+.eslintrc.js
+.prettierignore
+.prettierrc.js
