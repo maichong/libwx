@@ -111,12 +111,6 @@ export interface UserInfo {
   openid: string;
   unionid?: string;
   subscribe: 0 | 1;
-  nickname: string;
-  sex: 1 | 2 | 0;
-  province: string;
-  city: string;
-  country: string;
-  headimgurl: string;
   language: string;
   subscribe_time: number;
   remark: string;

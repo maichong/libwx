@@ -1,6 +1,6 @@
 {
   "name": "libwx",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Weixin sdk for node",
   "main": "lib/index.js",
   "types": "index.d.ts",
@@ -27,7 +27,7 @@
   "author": "Liang <liang@maichong.it> (https://github.com/liangxingchen)",
   "license": "MIT",
   "dependencies": {
-    "akita": "^0.12.0",
+    "akita": "^0.12.1",
     "hasha": "^5.2.2",
     "lodash": "^4.17.21",
     "string-random": "^0.1.3"

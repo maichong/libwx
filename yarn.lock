@@ -1283,10 +1283,10 @@ ajv@^7.0.2:
     require-from-string "^2.0.2"
     uri-js "^4.2.2"
 
-akita@^0.12.0:
-  version "0.12.0"
-  resolved "https://registry.yarnpkg.com/akita/-/akita-0.12.0.tgz#3c80dd4713813f75debaa175a0c70e39860797b0"
-  integrity sha512-Hsf7kNxiQEYMncQ1KYWHxGgjJk/K/kyqgPFcOWguddIrlY4VKqP94Xr6aVYFS5grQhxBfKE5Jb59aU5lcnu/gA==
+akita@^0.12.1:
+  version "0.12.1"
+  resolved "https://registry.npmmirror.com/akita/download/akita-0.12.1.tgz#fc1943b421b0655542ccfdf67379e67978676d36"
+  integrity sha1-/BlDtCGwZVVCzP32c3nmeXhnbTY=
   dependencies:
     debug "^4.3.1"
     form-data "^4.0.0"
