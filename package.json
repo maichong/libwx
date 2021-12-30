@@ -1,6 +1,6 @@
 {
   "name": "libwx",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "Weixin sdk for node",
   "main": "lib/index.js",
   "types": "index.d.ts",
