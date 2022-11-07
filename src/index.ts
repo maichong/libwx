@@ -445,7 +445,7 @@ export default class Weixin {
    * @param {Buffer} image 图片Buffer数据
    */
   async imgSecCheck(image: Buffer): Promise<boolean> {
-    const FormData = this._client._options.FormData;
+    const FormData = this._client.options.FormData;
     let body = new FormData();
     body.append('media', image as any, 'image.jpg');
 
